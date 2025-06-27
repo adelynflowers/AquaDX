@@ -1,6 +1,6 @@
 services:
   app:
-    image: hykilpikonna/aquadx:latest
+    build: .
     ports:
       - "80:80"
       - "8443:8443"

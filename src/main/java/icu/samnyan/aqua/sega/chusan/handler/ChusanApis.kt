@@ -6,6 +6,7 @@ import icu.samnyan.aqua.sega.chusan.ChusanController
 import icu.samnyan.aqua.sega.chusan.ChusanData
 import icu.samnyan.aqua.sega.chusan.model.request.UserCMissionResp
 import icu.samnyan.aqua.sega.chusan.model.userdata.Chu3UserItem
+import icu.samnyan.aqua.sega.chusan.model.userdata.UserCMission
 import icu.samnyan.aqua.sega.chusan.model.userdata.UserMusicDetail
 import icu.samnyan.aqua.sega.general.model.CardStatus
 import icu.samnyan.aqua.sega.general.model.response.UserRecentRating
@@ -151,10 +152,25 @@ fun ChusanController.chusanInit() {
 
     // Introduced in LMN+
     "GetUserCMissionList" api@ {
-        val missions = parsing { (data["userCMissionList"] as List<JDict>).map { it["missionId"]!!.int } }
+        // Update missions table with what we've seen
+        // All missions are enabled by default, if one is disabled that means
+        // the user has indicated a mission preference
         val u = db.userData.findByCard_ExtId(uid)() ?: return@api null
+        val existingMissions = db.userCMission.findByUser(u);
+        val userPreferenceIsSet = existingMissions.any { !it.enabled }
 
-        db.userCMission.findByUserAndMissionIdIn(u, missions).map {
+        val missions = parsing {
+            (data["userCMissionList"] as List<JDict>).map {
+                UserCMission().apply {
+                    missionId = it["missionId"]!!.int
+                    point = it["point"]!!.int
+                }.also { it.enabled = !userPreferenceIsSet }.also { it.user = u }
+            }
+        }
+        (missions - existingMissions).forEach{ db.userCMission.save(it) }
+
+
+        db.userCMission.findByUser(u).filter { it.enabled }.map {
             UserCMissionResp().apply {
                 missionId = it.missionId
                 point = it.point

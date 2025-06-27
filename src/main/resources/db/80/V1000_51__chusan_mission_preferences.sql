@@ -1,0 +1,1 @@
+ALTER TABLE chusan_user_cmission ADD enabled BOOLEAN DEFAULT 1;

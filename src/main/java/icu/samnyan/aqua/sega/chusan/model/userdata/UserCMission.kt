@@ -8,4 +8,5 @@ import jakarta.persistence.Table
 class UserCMission : Chu3UserEntity() {
     var missionId = 0
     var point = 0
+    var enabled = true
 }
